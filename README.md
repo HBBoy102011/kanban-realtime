@@ -175,7 +175,7 @@ B = generateKeyBetween("V", "m") // "c"
 
 ## Тесты и CI
 
-`npm test` запускает Vitest: 17 тестов на fractional indexing и матрицу ролей. CI (`.github/workflows/ci.yml`) на каждый push в `main` и pull request прогоняет `prisma generate`, `npm run typecheck`, `npm test` и `npm run build`.
+`npm test` запускает Vitest: 17 тестов на fractional indexing и матрицу ролей. CI (`.github/workflows/ci.yml`) на каждый push в `main` и pull request прогоняет две задачи: `verify` (`prisma generate`, `npm run typecheck`, `npm test`, `npm run build`) и `E2E (Playwright)` — создаёт схему SQLite, ставит Chromium, запускает `npm run test:e2e` (Playwright сам поднимает API и Vite) и при падении сохраняет `test-results/` с трассировкой в артефактах.
 
 `npm run test:e2e` запускает Playwright-сценарий `e2e/realtime-dnd.spec.ts`. Он создаёт доску и двух пользователей через API, открывает два изолированных браузерных контекста (владелец и наблюдатель) и проверяет, что:
 
