@@ -1,7 +1,7 @@
 import type { AuthResponse } from "@shared/types";
 
 let accessToken: string | null = null;
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<string | null> | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
@@ -43,10 +43,19 @@ export async function refreshSession(): Promise<AuthResponse | null> {
   return data;
 }
 
-function refreshOnce(): Promise<boolean> {
+/**
+ * Refreshes the access token through the httpOnly cookie.
+ *
+ * Single-flight: REST retries and the realtime socket share this promise, so a
+ * simultaneous 401 in both places makes one request and gets one token. Network
+ * failures resolve to null instead of rejecting, letting callers report their
+ * own error.
+ */
+export function refreshAccessToken(): Promise<string | null> {
   if (!refreshPromise) {
     refreshPromise = refreshSession()
-      .then((session) => Boolean(session))
+      .then((session) => session?.accessToken ?? null)
+      .catch(() => null)
       .finally(() => {
         refreshPromise = null;
       });
@@ -71,7 +80,7 @@ export async function api<T>(
   });
 
   if (response.status === 401 && retry && !path.startsWith("/api/auth/")) {
-    if (await refreshOnce()) return api<T>(path, options, false);
+    if (await refreshAccessToken()) return api<T>(path, options, false);
   }
 
   if (!response.ok) throw new ApiError(response.status, await readError(response));
